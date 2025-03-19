@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Arogya AI - Prescription Checker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f7f8;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      position: relative;
+      text-align: center;
+    }
+
+    .logo {
+      max-width: 150px;
+      margin: 0 auto 10px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #0077b6;
+      margin-bottom: 30px;
+    }
+
+    .input-box {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    button {
+      background-color: #0077b6;
+      color: #fff;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #005f8f;
+    }
+
+    .info-box {
+      background: #eef2f3;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 10px;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .warning-message {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+
+    .warning-danger {
+      background-color: #ffe5e5;
+      color: #d00000;
+      border: 1px solid #d00000;
+    }
+
+    .success-message {
+      color: #008000;
+      font-weight: bold;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 20px;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #0077b6;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 10px auto;
+      display: none;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Logo Image -->
+    <img src="ArogyaLogo.png" alt="Arogya AI Logo" class="logo" />
+
+    <h1>Arogya AI</h1>
+
+    <!-- Doctor Section -->
+    <div class="input-box">
+      <label for="doctorID">Doctor ID:</label>
+      <input type="text" id="doctorID" placeholder="Enter Doctor ID" onkeyup="showDoctorDetails()" />
+      <button onclick="simulateDoctorBiometric()">Use Doctor Biometric</button>
+    </div>
+    <div class="spinner" id="doctorSpinner"></div>
+    <div id="doctorDetails" class="info-box"></div>
+
+    <!-- Patient Section -->
+    <div class="input-box">
+      <label for="patientABHAID">Patient ABHA ID:</label>
+      <input type="text" id="patientABHAID" placeholder="Enter ABHA ID" onkeyup="showPatientInfo()" />
+      <button onclick="simulatePatientBiometric()">Use Patient Biometric</button>
+    </div>
+
+    <div class="spinner" id="patientSpinner"></div>
+    <div id="patientInfo" class="info-box"></div>
+
+    <!-- Prescription Section -->
+    <div class="input-box">
+      <label for="prescription">Prescription:</label>
+      <textarea id="prescription" rows="6" placeholder="Enter prescribed medicines..." onkeyup="checkPrescription()"></textarea>
+    </div>
+
+    <div id="warningMessage" class="warning-message"></div>
+
+    <div class="footer">
+      &copy; 2025 Arogya AI Team
+    </div>
+  </div>
+
+  <script>
+    const doctors = {
+      "AJ22": {
+        name: "Dr. Ayush Joshi",
+        qualification: "MBBS",
+        contact: "7037955442"
+      },
+      "GS37": {
+        name: "Dr. Garima",
+        qualification: "MBBS, MD, DM",
+        contact: "8126576772"
+      }
+    };
+
+    const patients = {
+      "VP001": {
+        name: "Vanshika Malik",
+        age: 32,
+        sex: "Female",
+        bloodGroup: "B +ve",
+        alerts: {
+          "atropine": "Danger: History of Graves Disease"
+        }
+      },
+      "VP002": {
+        name: "Nikhil Kamal",
+        age: 22,
+        sex: "Male",
+        bloodGroup: "A +ve",
+        alerts: {
+          "isotretinoin": "Danger: History of Depression"
+        }
+      },
+      "VP003": {
+        name: "Adarsh Yadav",
+        age: 52,
+        sex: "Male",
+        bloodGroup: "B -ve",
+        alerts: {
+          "propanolol": "Danger: Diabetic Patient"
+        }
+      },
+      "VP004": {
+        name: "Utkarsh Upparwal",
+        age: 42,
+        sex: "Male",
+        bloodGroup: "O -ve",
+        alerts: {
+          "fluconazole": "Danger: Patient is on Warfarin"
+        }
+      }
+    };
+
+    function showDoctorDetails() {
+      const doctorID = document.getElementById("doctorID").value.toUpperCase();
+      const details = doctors[doctorID];
+      const container = document.getElementById("doctorDetails");
+
+      if (details) {
+        container.innerHTML = `<strong>${details.name}</strong><br>${details.qualification}<br>Contact: ${details.contact}`;
+      } else if (doctorID) {
+        container.innerHTML = `<span class="warning-danger">Doctor not found</span>`;
+      } else {
+        container.innerHTML = "";
+      }
+    }
+
+    function showPatientInfo() {
+      const patientID = document.getElementById("patientABHAID").value.toUpperCase();
+      const info = patients[patientID];
+      const container = document.getElementById("patientInfo");
+
+      if (info) {
+        container.innerHTML = `
+          <strong>Patient Information</strong><br>
+          Name: ${info.name}<br>
+          Age: ${info.age}<br>
+          Sex: ${info.sex}<br>
+          Blood Group: ${info.bloodGroup}
+        `;
+      } else if (patientID) {
+        container.innerHTML = `<span class="warning-danger">Patient not found</span>`;
+      } else {
+        container.innerHTML = "";
+      }
+
+      checkPrescription();
+    }
+
+    function checkPrescription() {
+      const patientID = document.getElementById("patientABHAID").value.toUpperCase();
+      const prescriptionText = document.getElementById("prescription").value.toLowerCase();
+
+      const warningBox = document.getElementById("warningMessage");
+      warningBox.className = "warning-message"; // reset class
+
+      if (!patients[patientID]) {
+        warningBox.innerHTML = "";
+        return;
+      }
+
+      const alerts = patients[patientID].alerts;
+      let warning = "";
+
+      for (const [drug, alertMessage] of Object.entries(alerts)) {
+        if (prescriptionText.includes(drug.toLowerCase())) {
+          warning = alertMessage;
+          break;
+        }
+      }
+
+      if (warning) {
+        warningBox.classList.add("warning-danger");
+        warningBox.innerHTML = warning;
+      } else {
+        warningBox.classList.remove("warning-danger");
+        warningBox.innerHTML = "<span class='success-message'>No warnings detected.</span>";
+      }
+    }
+
+    function simulatePatientBiometric() {
+      const spinner = document.getElementById("patientSpinner");
+      const abhaInput = document.getElementById("patientABHAID");
+
+      spinner.style.display = "block";
+      abhaInput.disabled = true;
+
+      setTimeout(() => {
+        spinner.style.display = "none";
+        abhaInput.disabled = false;
+
+        const fetchedID = "VP002"; // Simulated result
+        abhaInput.value = fetchedID;
+        showPatientInfo();
+        alert("Patient biometric authentication successful! ABHA ID fetched.");
+      }, 2000);
+    }
+
+    function simulateDoctorBiometric() {
+      const spinner = document.getElementById("doctorSpinner");
+      const doctorInput = document.getElementById("doctorID");
+
+      spinner.style.display = "block";
+      doctorInput.disabled = true;
+
+      setTimeout(() => {
+        spinner.style.display = "none";
+        doctorInput.disabled = false;
+
+        const fetchedID = "AJ22"; // Simulated result
+        doctorInput.value = fetchedID;
+        showDoctorDetails();
+        alert("Doctor biometric authentication successful! Doctor ID fetched.");
+      }, 2000);
+    }
+  </script>
+
+</body>
+</html>
