@@ -35,10 +35,6 @@
       margin-bottom: 30px;
     }
 
-    h3 {
-      margin-bottom: 15px;
-    }
-
     .input-box {
       margin-bottom: 20px;
       text-align: left;
@@ -149,9 +145,7 @@
 <body>
 
   <div class="container">
-    <!-- Logo Image -->
-    <img src="ArogyaLogo.png" alt="Arogya AI Logo showing a brain, stethoscope, and AI circuits" class="logo" />
-
+    <img src="ArogyaLogo.png" alt="Arogya AI Logo" class="logo" />
     <h1>Arogya AI</h1>
 
     <!-- Doctor Section -->
@@ -167,26 +161,32 @@
     <div class="input-box">
       <label for="patientABHAID">Patient ABHA ID:</label>
       <input type="text" id="patientABHAID" placeholder="Enter ABHA ID" onkeyup="showPatientInfo()" />
-      <button onclick="simulateBiometric('patient', 'VP002')">Use Patient Biometric</button>
+      <button onclick="simulateBiometric('patient', 'VP003')">Use Patient Biometric</button>
     </div>
     <div class="spinner" id="patientSpinner"></div>
     <div id="patientInfo" class="info-box"></div>
 
     <!-- Clinical Notes Section -->
     <div class="input-box">
-      <h3 style="color:#0077b6;">Clinical Notes</h3>
-
       <label for="chiefComplaint">Chief Complaint:</label>
-      <textarea id="chiefComplaint" rows="2" placeholder="Enter chief complaint..."></textarea>
+      <textarea id="chiefComplaint" rows="2" placeholder="Enter chief complaint..." disabled onkeyup="checkChiefComplaint()"></textarea>
+    </div>
 
+    <div class="input-box">
       <label for="historyPresentingIllness">History of Presenting Illness:</label>
-      <textarea id="historyPresentingIllness" rows="4" placeholder="Enter history of presenting illness..."></textarea>
+      <textarea id="historyPresentingIllness" rows="4" placeholder="Enter history of presenting illness..." disabled onkeyup="checkHistoryIllness()"></textarea>
+    </div>
+
+    <!-- Investigations Section -->
+    <div class="input-box">
+      <label for="investigations">Investigations:</label>
+      <textarea id="investigations" rows="3" placeholder="Advise investigations..." disabled onkeyup="checkInvestigations()"></textarea>
     </div>
 
     <!-- Prescription Section -->
     <div class="input-box">
       <label for="prescription">Prescription:</label>
-      <textarea id="prescription" rows="6" placeholder="Enter prescribed medicines..." onkeyup="checkPrescription()" disabled></textarea>
+      <textarea id="prescription" rows="6" placeholder="Enter prescribed medicines..." disabled onkeyup="checkPrescription()"></textarea>
     </div>
 
     <div id="warningMessage" class="warning-message"></div>
@@ -215,18 +215,6 @@
     };
 
     const patients = {
-      "VP001": {
-        name: "Vanshika Malik",
-        age: 32,
-        sex: "Female",
-        bloodGroup: "B +ve",
-        alerts: {
-          "atropine": {
-            message: "Danger: History of Graves Disease",
-            synonyms: ["atropin"]
-          }
-        }
-      },
       "VP002": {
         name: "Nikhil Kamal",
         age: 22,
@@ -237,30 +225,30 @@
             message: "Danger: History of Depression",
             synonyms: ["accutane"]
           }
+        },
+        historyAlerts: {
+          "polyphagia": "Family History of Diabetes: His father Dr. Neel Kamal has diabetes for the last 8 years.",
+          "polydypsia": "Family History of Diabetes: His father Dr. Neel Kamal has diabetes for the last 8 years.",
+          "polyhydra": "Family History of Diabetes: His father Dr. Neel Kamal has diabetes for the last 8 years."
+        },
+        investigationAlerts: {
+          "hba1c": "Note: Patient has undergone splenectomy. HbA1C may be falsely elevated."
         }
       },
       "VP003": {
         name: "Adarsh Yadav",
-        age: 52,
+        age: 61,
         sex: "Male",
         bloodGroup: "B -ve",
         alerts: {
-          "propanolol": {
+          "propranolol": {
             message: "Danger: Diabetic Patient",
             synonyms: ["inderal"]
           }
-        }
-      },
-      "VP004": {
-        name: "Utkarsh Upparwal",
-        age: 42,
-        sex: "Male",
-        bloodGroup: "O -ve",
-        alerts: {
-          "fluconazole": {
-            message: "Danger: Patient is on Warfarin",
-            synonyms: ["diflucan"]
-          }
+        },
+        chiefComplaintAlerts: {
+          symptoms: ["frequent fractures", "brittle teeth", "hearing loss"],
+          message: "Suspected Osteogenesis Imperfecta"
         }
       }
     };
@@ -282,27 +270,100 @@
     function showPatientInfo() {
       const patientID = document.getElementById("patientABHAID").value.toUpperCase();
       const info = patients[patientID];
-      const container = document.getElementById("patientInfo");
-      const prescriptionBox = document.getElementById("prescription");
+      const patientContainer = document.getElementById("patientInfo");
 
       if (info) {
-        container.innerHTML = `
+        patientContainer.innerHTML = `
           <strong>Patient Information</strong><br>
           Name: ${info.name}<br>
           Age: ${info.age}<br>
           Sex: ${info.sex}<br>
           Blood Group: ${info.bloodGroup}
         `;
-        prescriptionBox.disabled = false;
-      } else if (patientID) {
-        container.innerHTML = `<span class="warning-danger">Patient not found</span>`;
-        prescriptionBox.disabled = true;
+
+        document.getElementById("chiefComplaint").disabled = false;
+        document.getElementById("historyPresentingIllness").disabled = false;
+        document.getElementById("investigations").disabled = false;
+        document.getElementById("prescription").disabled = false;
       } else {
-        container.innerHTML = "";
-        prescriptionBox.disabled = true;
+        patientContainer.innerHTML = `<span class="warning-danger">Patient not found</span>`;
+        document.getElementById("chiefComplaint").disabled = true;
+        document.getElementById("historyPresentingIllness").disabled = true;
+        document.getElementById("investigations").disabled = true;
+        document.getElementById("prescription").disabled = true;
       }
 
       checkPrescription();
+    }
+
+    function checkChiefComplaint() {
+      const patientID = document.getElementById("patientABHAID").value.toUpperCase();
+      const chiefComplaintText = document.getElementById("chiefComplaint").value.toLowerCase();
+      const warningBox = document.getElementById("warningMessage");
+
+      if (!patients[patientID]) {
+        warningBox.innerHTML = "";
+        return;
+      }
+
+      const chiefComplaintAlerts = patients[patientID].chiefComplaintAlerts || null;
+
+      if (chiefComplaintAlerts) {
+        const requiredSymptoms = chiefComplaintAlerts.symptoms;
+        const presentSymptoms = requiredSymptoms.filter(symptom => chiefComplaintText.includes(symptom));
+
+        if (presentSymptoms.length === requiredSymptoms.length) {
+          warningBox.className = "warning-message warning-danger";
+          warningBox.innerHTML = chiefComplaintAlerts.message;
+          return;
+        }
+      }
+
+      warningBox.innerHTML = "";
+    }
+
+    function checkHistoryIllness() {
+      const patientID = document.getElementById("patientABHAID").value.toUpperCase();
+      const historyText = document.getElementById("historyPresentingIllness").value.toLowerCase();
+      const warningBox = document.getElementById("warningMessage");
+
+      if (!patients[patientID]) {
+        warningBox.innerHTML = "";
+        return;
+      }
+
+      const historyAlerts = patients[patientID].historyAlerts || {};
+      for (const keyword in historyAlerts) {
+        if (historyText.includes(keyword)) {
+          warningBox.className = "warning-message warning-danger";
+          warningBox.innerHTML = historyAlerts[keyword];
+          return;
+        }
+      }
+
+      warningBox.innerHTML = "";
+    }
+
+    function checkInvestigations() {
+      const patientID = document.getElementById("patientABHAID").value.toUpperCase();
+      const investigationText = document.getElementById("investigations").value.toLowerCase();
+      const warningBox = document.getElementById("warningMessage");
+
+      if (!patients[patientID]) {
+        warningBox.innerHTML = "";
+        return;
+      }
+
+      const investigationAlerts = patients[patientID].investigationAlerts || {};
+      for (const keyword in investigationAlerts) {
+        if (investigationText.includes(keyword)) {
+          warningBox.className = "warning-message warning-danger";
+          warningBox.innerHTML = investigationAlerts[keyword];
+          return;
+        }
+      }
+
+      warningBox.innerHTML = "";
     }
 
     function checkPrescription() {
@@ -310,31 +371,22 @@
       const prescriptionText = document.getElementById("prescription").value.toLowerCase();
       const warningBox = document.getElementById("warningMessage");
 
-      warningBox.className = "warning-message"; // reset class
-
       if (!patients[patientID]) {
         warningBox.innerHTML = "";
         return;
       }
 
-      const alerts = patients[patientID].alerts;
-      let warning = "";
-
+      const alerts = patients[patientID].alerts || {};
       for (const [drug, alertObj] of Object.entries(alerts)) {
         const allNames = [drug.toLowerCase(), ...(alertObj.synonyms || []).map(n => n.toLowerCase())];
         if (allNames.some(name => prescriptionText.includes(name))) {
-          warning = alertObj.message;
-          break;
+          warningBox.className = "warning-message warning-danger";
+          warningBox.innerHTML = alertObj.message;
+          return;
         }
       }
 
-      if (warning) {
-        warningBox.classList.add("warning-danger");
-        warningBox.innerHTML = warning;
-      } else {
-        warningBox.classList.remove("warning-danger");
-        warningBox.innerHTML = "<span class='success-message'>No warnings detected.</span>";
-      }
+      warningBox.innerHTML = "<span class='success-message'>No warnings detected.</span>";
     }
 
     function simulateBiometric(type, fetchedID) {
@@ -373,33 +425,34 @@
       const doctorID = document.getElementById("doctorID").value.toUpperCase();
       const patientID = document.getElementById("patientABHAID").value.toUpperCase();
       const prescriptionText = document.getElementById("prescription").value.trim();
-      const chiefComplaint = document.getElementById("chiefComplaint").value.trim();
-      const historyPresentingIllness = document.getElementById("historyPresentingIllness").value.trim();
 
       if (!doctorID || !patientID || !prescriptionText) {
         alert("Fill all fields before submitting.");
         return;
       }
 
-      alert(
-        `Prescription submitted successfully!\n\nDoctor ID: ${doctorID}\nPatient ID: ${patientID}\n\nChief Complaint: ${chiefComplaint}\nHistory of Presenting Illness: ${historyPresentingIllness}`
-      );
-
-      // Reset form
+      alert(`Prescription submitted successfully!\nDoctor: ${doctorID}\nPatient: ${patientID}`);
       document.getElementById("doctorID").value = "";
       document.getElementById("patientABHAID").value = "";
-      document.getElementById("prescription").value = "";
       document.getElementById("chiefComplaint").value = "";
       document.getElementById("historyPresentingIllness").value = "";
+      document.getElementById("investigations").value = "";
+      document.getElementById("prescription").value = "";
+
       document.getElementById("doctorDetails").innerHTML = "";
       document.getElementById("patientInfo").innerHTML = "";
       document.getElementById("warningMessage").innerHTML = "";
+
+      document.getElementById("chiefComplaint").disabled = true;
+      document.getElementById("historyPresentingIllness").disabled = true;
+      document.getElementById("investigations").disabled = true;
       document.getElementById("prescription").disabled = true;
     }
 
     function toggleDarkMode() {
       document.body.classList.toggle("dark-mode");
     }
+
   </script>
 
 </body>
